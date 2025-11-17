@@ -1,0 +1,7 @@
+streamlit 
+langchain-openai 
+python-dotenv 
+pillow 
+python-docx 
+PyPDF2
+pdf2image
