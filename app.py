@@ -24,16 +24,16 @@ st.set_page_config(
 )
 
 # ----------------------
-# Custom Styling (Digiteer Colors)
+# Custom Styling (Digiteer Blue/Indigo Scheme)
 # ----------------------
 st.markdown("""
     <style>
-    /* Toyota Red: #EB0A1E, Dark Gray: #2D2D2D, Light Gray: #F7F7F7 */
+    /* Use Streamlit theme variables to support light and dark mode automatically */
     .main {
-        background-color: #F7F7F7;
+        background-color: var(--background-color);
     }
     .stButton>button {
-        background-color: #EB0A1E;
+        background-color: #0066cc;
         color: white;
         border: none;
         border-radius: 8px;
@@ -42,36 +42,38 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     .stButton>button:hover {
-        background-color: #C4060F;
-        box-shadow: 0 4px 12px rgba(235, 10, 30, 0.3);
+        background-color: #0052a3;
+        box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
     }
     .chat-message {
         padding: 16px;
         border-radius: 10px;
         margin-bottom: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        background-color: var(--secondary-background-color);
+        color: var(--text-color);
     }
     .user-message {
-        border-left: 4px solid #EB0A1E;
+        border-left: 4px solid #0066cc;
     }
     .bot-message {
-        border-left: 4px solid #2D2D2D;
+        border-left: 4px solid var(--text-color);
     }
     .sidebar .sidebar-content {
-        background-color: #FFFFFF;
+        background-color: var(--background-color);
     }
-    h1, h2, h3 {
-        color: #2D2D2D;
+    h1, h2, h3, p, span, strong {
+        color: var(--text-color);
     }
     .logo-container {
         text-align: center;
         padding: 20px 0;
-        background-color: #EB0A1E;
+        background-color: #0066cc;
         border-radius: 10px;
         margin-bottom: 20px;
     }
     .logo-placeholder {
-        background-color: white;
+        background-color: var(--background-color);
         padding: 20px;
         border-radius: 8px;
         display: inline-block;
@@ -85,7 +87,6 @@ st.markdown("""
 col_logo, col_title = st.columns([1, 3])
 
 with col_logo:
-    # Logo placeholder - replace 'path/to/your/logo.png' with your actual logo path
     logo_path = "./digiteer_logo.png"  # Change this to your logo file path
     
     if os.path.exists(logo_path):
@@ -96,7 +97,7 @@ with col_logo:
         st.markdown("""
             <div class="logo-container">
                 <div class="logo-placeholder">
-                    <h2 style="color: #EB0A1E; margin: 0;">YOUR LOGO</h2>
+                    <h2 style="color: #0066cc; margin: 0;">YOUR LOGO</h2>
                     <p style="color: #666; font-size: 12px; margin: 5px 0 0 0;">Place logo.png in root directory</p>
                 </div>
             </div>
@@ -104,7 +105,7 @@ with col_logo:
 
 with col_title:
     st.title(" Digiteer Assistant")
-    st.markdown("**Your intelligent automotive companion**")
+    st.markdown("**Your intelligent document and Q&A assistant**")
 
 st.divider()
 
@@ -132,33 +133,57 @@ with st.sidebar:
     st.divider()
 
 # ----------------------
-# Process Uploaded Files
+# Process Uploaded Files (Cached in Session State)
 # ----------------------
-file_text = ""
-image_analysis = ""
+if "processed_file_name" not in st.session_state:
+    st.session_state.processed_file_name = None
+if "file_text" not in st.session_state:
+    st.session_state.file_text = ""
 
+if "processed_image_name" not in st.session_state:
+    st.session_state.processed_image_name = None
+if "image_analysis" not in st.session_state:
+    st.session_state.image_analysis = ""
+
+file_text = ""
 if uploaded_file:
+    if st.session_state.processed_file_name != uploaded_file.name:
+        with st.sidebar:
+            st.info(f"⏳ Processing: **{uploaded_file.name}**")
+            with st.spinner("📄 Analyzing document..."):
+                st.session_state.file_text = read_uploaded_file(uploaded_file)
+                st.session_state.processed_file_name = uploaded_file.name
+            st.success("📊 Content analyzed successfully")
+    file_text = st.session_state.file_text
+    
     with st.sidebar:
         st.success(f"✅ File loaded: **{uploaded_file.name}**")
-        with st.spinner("📄 Analyzing document..."):
-            file_text = read_uploaded_file(uploaded_file)
-            st.info("📊 Content extracted successfully")
-        
         with st.expander("📖 View Document Content"):
             preview_text = file_text[:2000] + "..." if len(file_text) > 2000 else file_text
             st.text_area("Content Preview", preview_text, height=200, disabled=True)
+else:
+    st.session_state.processed_file_name = None
+    st.session_state.file_text = ""
 
+image_analysis = ""
 if uploaded_image:
+    if st.session_state.processed_image_name != uploaded_image.name:
+        with st.sidebar:
+            st.info(f"⏳ Processing image: **{uploaded_image.name}**")
+            with st.spinner("🔍 Analyzing image..."):
+                st.session_state.image_analysis = analyze_image_with_ai(uploaded_image)
+                st.session_state.processed_image_name = uploaded_image.name
+            st.success("✅ Image analyzed successfully!")
+    image_analysis = st.session_state.image_analysis
+    
     with st.sidebar:
         image = Image.open(uploaded_image)
         st.image(image, caption="Uploaded Image", use_container_width=True)
-        
-        with st.spinner("🔍 Analyzing image..."):
-            image_analysis = analyze_image_with_ai(uploaded_image)
-        st.success("✅ Image analyzed successfully!")
-        
         with st.expander("🔎 View Image Analysis"):
             st.write(image_analysis)
+else:
+    st.session_state.processed_image_name = None
+    st.session_state.image_analysis = ""
 
 # Combine context
 combined_context = ""
@@ -168,7 +193,7 @@ if image_analysis:
     combined_context += f"IMAGE ANALYSIS:\n{image_analysis}\n\n"
 
 # ----------------------
-# Initialize Session State
+# Initialize Session State for Chat
 # ----------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -182,7 +207,7 @@ st.subheader("💬 Chat Interface")
 chat_container = st.container()
 with chat_container:
     if len(st.session_state.messages) == 0:
-        st.info("👋 Welcome! How can I assist you today?")
+        st.info("👋 Welcome! Ask me anything, or upload documents/images in the sidebar to get started.")
     
     for msg in st.session_state.messages:
         if msg["role"] == "user":
@@ -205,7 +230,7 @@ with st.form(key="chat_input_form", clear_on_submit=True):
     with col_input:
         user_input = st.text_input(
             "Type your message",
-            placeholder="Ask me anything about vehicles, services, or upload documents...",
+            placeholder="Ask me anything — or upload a document/image to ask about it...",
             label_visibility="collapsed"
         )
     
@@ -227,22 +252,22 @@ st.subheader("⚡ Quick Actions")
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    if st.button("📞 Ask A Representative", use_container_width=True):
-        handle_quick_action("I want to ask a representative.", combined_context)
+    if st.button("📋 Summarize Content", use_container_width=True):
+        handle_quick_action("Can you summarize the uploaded document or image?", combined_context)
         st.rerun()
 
 with col2:
-    if st.button("🚗 Book A Test Drive", use_container_width=True):
-        handle_quick_action("I want to book a test drive.", combined_context)
+    if st.button("🔍 Extract Key Details", use_container_width=True):
+        handle_quick_action("Extract all key dates, amounts, names, and details from the uploaded files.", combined_context)
         st.rerun()
 
 with col3:
-    if st.button("🎁 Explore Promos", use_container_width=True):
-        handle_quick_action("I want to explore current promotions.", combined_context)
+    if st.button("💡 Brainstorm Ideas", use_container_width=True):
+        handle_quick_action("Based on the uploaded context, what are some interesting questions I can ask or insights I can gather?", combined_context)
         st.rerun()
 
 with col4:
-    if st.button("🔧 Service Booking", use_container_width=True):
-        handle_quick_action("I want to book a service appointment.", combined_context)
+    if st.button("🌐 Translate Content", use_container_width=True):
+        handle_quick_action("Can you translate the key content of this document to English or Filipino?", combined_context)
         st.rerun()
 
