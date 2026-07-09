@@ -101,16 +101,37 @@ def read_uploaded_file(file):
     file_type = file.type
     
     if file_type == "text/plain":
+        file.seek(0)
         return file.read().decode("utf-8")
 
     elif file_type == "application/pdf":
+        # Hybrid approach: Try fast local text extraction first
+        try:
+            file.seek(0)
+            reader = PyPDF2.PdfReader(file)
+            text = ""
+            for page in reader.pages:
+                extracted = page.extract_text()
+                if extracted:
+                    text += extracted + "\n"
+            
+            # If the PDF contains extractable digital text, return it instantly
+            if len(text.strip()) > 100:
+                return text
+        except Exception:
+            # Fall back to Gemini if extraction fails
+            pass
+            
+        # Fall back to deep visual analysis if it is a scanned/image PDF
         return analyze_pdf_with_ai(file)
 
     elif file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        file.seek(0)
         doc = docx.Document(file)
         return "\n".join([para.text for para in doc.paragraphs])
 
     elif file_type == "text/csv":
+        file.seek(0)
         csv_text = ""
         decoded = file.read().decode("utf-8").splitlines()
         reader = csv.reader(decoded)
