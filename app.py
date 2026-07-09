@@ -17,14 +17,14 @@ def handle_quick_action(user_msg, combined_context):
 # Page Configuration
 # ----------------------
 st.set_page_config(
-    page_title="Toyota Digi Chatbot",
-    page_icon="🚗",
+    page_title="Digiteer Assistant",
+    page_icon="👨‍💼",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ----------------------
-# Custom Styling (Toyota Colors)
+# Custom Styling (Digiteer Colors)
 # ----------------------
 st.markdown("""
     <style>
@@ -86,7 +86,7 @@ col_logo, col_title = st.columns([1, 3])
 
 with col_logo:
     # Logo placeholder - replace 'path/to/your/logo.png' with your actual logo path
-    logo_path = "./toyota-white.png"  # Change this to your logo file path
+    logo_path = "./digiteer_logo.png"  # Change this to your logo file path
     
     if os.path.exists(logo_path):
         logo = Image.open(logo_path)
@@ -103,7 +103,7 @@ with col_logo:
         """, unsafe_allow_html=True)
 
 with col_title:
-    st.title(" Toyota Assistant")
+    st.title(" Digiteer Assistant")
     st.markdown("**Your intelligent automotive companion**")
 
 st.divider()
@@ -205,7 +205,7 @@ with st.form(key="chat_input_form", clear_on_submit=True):
     with col_input:
         user_input = st.text_input(
             "Type your message",
-            placeholder="Ask me anything about Toyota vehicles, services, or upload documents...",
+            placeholder="Ask me anything about vehicles, services, or upload documents...",
             label_visibility="collapsed"
         )
     
